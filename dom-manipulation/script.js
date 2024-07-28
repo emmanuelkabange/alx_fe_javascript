@@ -52,7 +52,8 @@ function saveLastViewedQuote(quote) {
 function loadLastViewedQuote() {
     const storedQuote = sessionStorage.getItem('lastViewedQuote');
     if (storedQuote) {
-        document.getElementById('quoteDisplay').innerHTML = JSON.parse(storedQuote);
+        const quote = JSON.parse(storedQuote);
+        document.getElementById('quoteDisplay').innerHTML = `<p>${quote.text}</p><p><em>${quote.category}</em></p>`;
     }
 }
 
@@ -73,7 +74,7 @@ function importFromJsonFile(event) {
     const fileReader = new FileReader();
     fileReader.onload = function(e) {
         const importedQuotes = JSON.parse(e.target.result);
-        quotes = importedQuotes;
+        quotes.push(...importedQuotes);
         saveQuotes();
         populateCategories();
         showRandomQuote();
@@ -122,31 +123,35 @@ function restoreFilter() {
 }
 
 // Sync quotes with server
-function syncQuotes() {
-    fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(quotes)
-    })
-    .then(response => response.json())
-    .then(data => console.log('Data synced with server:', data))
-    .catch(error => console.error('Error syncing data:', error));
+async function syncQuotes() {
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(quotes)
+        });
+        const data = await response.json();
+        console.log('Data synced with server:', data);
+    } catch (error) {
+        console.error('Error syncing data:', error);
+    }
 }
 
 // Fetch quotes from server
-function fetchQuotesFromServer() {
-    fetch(API_URL)
-        .then(response => response.json())
-        .then(data => {
-            // Update quotes array with server data
-            quotes = data.map(item => ({
-                text: item.title, // Adjust according to your API response
-                category: 'general' // Default category or extract from API response
-            }));
-            saveQuotes();
-            showRandomQuote();
-        })
-        .catch(error => console.error('Error fetching data:', error));
+async function fetchQuotesFromServer() {
+    try {
+        const response = await fetch(API_URL);
+        const data = await response.json();
+        // Update quotes array with server data
+        quotes = data.map(item => ({
+            text: item.title, // Adjust according to your API response
+            category: 'general' // Default category or extract from API response
+        }));
+        saveQuotes();
+        showRandomQuote();
+    } catch (error) {
+        console.error('Error fetching data:', error);
+    }
 }
 
 // Initialize quotes and categories
@@ -169,4 +174,7 @@ initialize();
 
 // Periodically check for new quotes from the server
 setInterval(fetchQuotesFromServer, 60000); // Fetch every 60 seconds
+
+// Periodically sync local quotes with the server
+setInterval(syncQuotes, 60000); // Sync every 60 seconds
 
