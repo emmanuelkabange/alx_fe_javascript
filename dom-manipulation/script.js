@@ -27,6 +27,9 @@ function addQuote() {
         document.getElementById('newQuoteCategory').value = '';
         populateCategories();
         showRandomQuote();
+        showNotification('Quote added successfully!');
+    } else {
+        showNotification('Please enter both quote text and category.');
     }
 }
 
@@ -78,7 +81,7 @@ function importFromJsonFile(event) {
         saveQuotes();
         populateCategories();
         showRandomQuote();
-        alert('Quotes imported successfully!');
+        showNotification('Quotes imported successfully!');
     };
     fileReader.readAsText(event.target.files[0]);
 }
@@ -132,8 +135,10 @@ async function syncQuotes() {
         });
         const data = await response.json();
         console.log('Data synced with server:', data);
+        showNotification('Quotes synced with server.');
     } catch (error) {
         console.error('Error syncing data:', error);
+        showNotification('Error syncing data with server.');
     }
 }
 
@@ -149,9 +154,21 @@ async function fetchQuotesFromServer() {
         }));
         saveQuotes();
         showRandomQuote();
+        showNotification('Quotes fetched from server.');
     } catch (error) {
         console.error('Error fetching data:', error);
+        showNotification('Error fetching data from server.');
     }
+}
+
+// Show notification
+function showNotification(message) {
+    const notification = document.getElementById('notification');
+    notification.textContent = message;
+    notification.style.display = 'block';
+    setTimeout(() => {
+        notification.style.display = 'none';
+    }, 3000);
 }
 
 // Initialize quotes and categories
@@ -177,4 +194,3 @@ setInterval(fetchQuotesFromServer, 60000); // Fetch every 60 seconds
 
 // Periodically sync local quotes with the server
 setInterval(syncQuotes, 60000); // Sync every 60 seconds
-
